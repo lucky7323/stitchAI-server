@@ -39,13 +39,13 @@ export class DeploymentController {
     status: 404,
     description: '찾을 수 없는 작업 ID입니다.',
   })
-  getStatus(@Param('jobId') jobId: string): DeploymentStatusResponseDto {
+  getStatus(@Param('jobId') jobId: string): Promise<DeploymentStatusResponseDto> {
     return this.deploymentService.getDeploymentStatus(jobId);
   }
 
   @Get('list')
   @ApiOperation({ summary: '배포 작업 목록 조회' })
-  listDeployments(): { jobId: string; status: string }[] {
+  listDeployments(): Promise<{ jobId: string; status: string }[]> {
     return this.deploymentService.listDeployments();
 }
 }

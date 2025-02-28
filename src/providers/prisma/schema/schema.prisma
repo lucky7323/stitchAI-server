@@ -1,0 +1,32 @@
+// prisma/schema.prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// DeploymentStatus enum
+enum DeploymentStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  FAILED
+}
+
+// Deployment model
+model Deployment {
+  id            Int             @id @default(autoincrement())
+  jobId         String          @unique
+  status        DeploymentStatus
+  message       String
+  instanceName  String?
+  output        String?
+  error         String?
+  startTime     DateTime        @default(now())
+  completedTime DateTime?
+  
+  @@index([startTime])
+}

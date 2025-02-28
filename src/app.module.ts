@@ -7,6 +7,7 @@ import { LoggerModule } from './modules/_common/logger/logger.module';
 import { DeploymentModule } from './modules/deployment/deployment.module';
 import { EnvModule } from './modules/env/env.module';
 import { PingModule } from './modules/ping/ping.module';
+import { PrismaModule } from './providers/prisma/prisma.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { PingModule } from './modules/ping/ping.module';
     DeploymentModule,
 
     EnvModule,
+    PrismaModule,
   ],
   controllers: [],
   providers: [],

@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { DeploymentStatus } from '@prisma/client';
 
 export class DeploymentResponseDto {
   @ApiProperty({
@@ -26,7 +27,7 @@ export class DeploymentStatusResponseDto {
     example: 'pending',
     enum: ['pending', 'in_progress', 'completed', 'failed'],
   })
-  status: 'pending' | 'in_progress' | 'completed' | 'failed';
+  status: DeploymentStatus;
 
   @ApiProperty({
     description: 'Status message with details',
