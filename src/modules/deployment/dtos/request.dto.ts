@@ -9,4 +9,28 @@ export class CreateElizaRequestDto {
   @IsNotEmpty()
   @IsString()
   telegram: string;
+
+  @ApiProperty({
+    description: 'Agent name',
+    example: 'Dobby',
+  })
+  @IsNotEmpty()
+  @IsString()
+  agentName: string;
+
+  @ApiProperty({
+    description: 'Agent description',
+    example: 'Dobby is a free assistant who chooses to help because of his enormous heart.',
+  })
+  @IsNotEmpty()
+  @IsString()
+  description: string;
+
+  @ApiProperty({
+    description: 'Agent social link',
+    example: 'https://t.me/dobby_bot',
+  })
+  @IsNotEmpty()
+  @IsString()
+  socialLink: string;
 }

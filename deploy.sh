@@ -1,12 +1,15 @@
 #!/bin/bash
 set -e
 
-if [ $# -lt 1 ]; then
-  echo "Usage: $0 <TELEGRAM_BOT_TOKEN>"
+if [ $# -lt 4 ]; then
+  echo "Usage: $0 <TELEGRAM_BOT_TOKEN> <AGENT_NAME> <DESCRIPTION> <SOCIAL_LINK>"
   exit 1
 fi
 
 TELEGRAM_BOT_TOKEN="$1"
+AGENT_NAME="$2"
+DESCRIPTION="$3"
+SOCIAL_LINK="$4"
 
 # .env 파일에서 OpenAI API 키 로드
 if [ -f ".env" ]; then
@@ -99,13 +102,11 @@ cd eliza
 #git checkout \$(git describe --tags --abbrev=0)
 git submodule update --init
 
-echo ">>> Updating dobby.character.json file to enable telegram client..."
-sed -i 's/"clients": \[\]/"clients": \["telegram"\]/' characters/dobby.character.json
-sed -i '/"Magic (house-elf style)",/d' characters/dobby.character.json
-sed -i '/"Creative problem-solving",/d' characters/dobby.character.json
-sed -i '/"Protective services",/d' characters/dobby.character.json
-sed -i '/"Loyal assistance",/d' characters/dobby.character.json
-sed -i '/"Unconventional solutions"/d' characters/dobby.character.json
+echo ">>> Updating character.json file to enable telegram client..."
+sed -i 's/{{agent_name}}/${AGENT_NAME}/g' characters/character.json
+sed -i 's/{{description}}/${DESCRIPTION}/g' characters/character.json
+sed -i 's/{{social_link}}/${SOCIAL_LINK}/g' characters/character.json
+sed -i 's/"clients": \[\]/"clients": \["telegram"\]/' characters/character.json
 
 # .env 파일 생성 및 환경 변수 설정
 if [ ! -f ".env" ]; then
@@ -133,7 +134,7 @@ After=network.target
 [Service]
 User=ubuntu
 WorkingDirectory=/home/ubuntu/eliza
-ExecStart=/bin/bash -c 'export NVM_DIR="/home/ubuntu/.nvm"; [ -s "\$NVM_DIR/nvm.sh" ] && . "\$NVM_DIR/nvm.sh"; cd /home/ubuntu/eliza && NODE_OPTIONS="--max-old-space-size=16384" pnpm start --character="/home/ubuntu/eliza/characters/dobby.character.json"'
+ExecStart=/bin/bash -c 'export NVM_DIR="/home/ubuntu/.nvm"; [ -s "\$NVM_DIR/nvm.sh" ] && . "\$NVM_DIR/nvm.sh"; cd /home/ubuntu/eliza && NODE_OPTIONS="--max-old-space-size=16384" pnpm start --character="/home/ubuntu/eliza/characters/character.json"'
 Restart=always
 RestartSec=15
 Environment=NODE_ENV=production

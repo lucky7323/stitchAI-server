@@ -3,6 +3,7 @@ import { exec } from 'child_process';
 import { promisify } from 'util';
 import * as path from 'path';
 import { DeploymentStatusResponseDto } from '../dtos/response.dto';
+import { CreateElizaRequestDto } from '../dtos/request.dto';
 
 const execAsync = promisify(exec);
 
@@ -18,7 +19,7 @@ export class DeploymentService {
    * @param telegramToken Telegram Bot Token
    * @returns 생성된 작업 ID
    */
-  async createElizaDeployment(telegramToken: string): Promise<string> {
+  async createElizaDeployment(dto: CreateElizaRequestDto): Promise<string> {
     // 작업 ID 생성 (타임스탬프 + 랜덤값)
     const jobId = Date.now().toString() + Math.floor(Math.random() * 1000).toString();
 
@@ -30,7 +31,7 @@ export class DeploymentService {
     };
 
     // 비동기로 배포 스크립트 실행
-    this.runDeploymentScript(jobId, telegramToken);
+    this.runDeploymentScript(jobId, dto.telegram, dto.agentName, dto.description, dto.socialLink);
 
     return jobId;
   }
@@ -52,8 +53,11 @@ export class DeploymentService {
    * 배포 스크립트를 실행합니다.
    * @param jobId 작업 ID
    * @param telegramToken Telegram Bot Token
+   * @param agentName Agent Name
+   * @param description Agent Description
+   * @param socialLink Agent Social Link
    */
-  private async runDeploymentScript(jobId: string, telegramToken: string): Promise<void> {
+  private async runDeploymentScript(jobId: string, telegramToken: string, agentName: string, description: string, socialLink: string): Promise<void> {
     try {
       // 상태 업데이트: 진행 중
       this.deploymentStatus[jobId] = {
@@ -67,7 +71,7 @@ export class DeploymentService {
       this.logger.log(`스크립트 실행: ${scriptPath} ${telegramToken}`);
 
       // 스크립트 실행
-      const { stdout, stderr } = await execAsync(`"${scriptPath}" "${telegramToken}"`);
+      const { stdout, stderr } = await execAsync(`"${scriptPath}" "${telegramToken}" "${agentName}" "${description}" "${socialLink}"`);
       
       // 인스턴스 이름 추출 (stdout에서 정규식으로 추출)
       const instanceNameMatch = stdout.match(/인스턴스 (eliza-agent-\d+)를 생성합니다/);
