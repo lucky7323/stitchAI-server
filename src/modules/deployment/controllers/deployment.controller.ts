@@ -42,4 +42,10 @@ export class DeploymentController {
   getStatus(@Param('jobId') jobId: string): DeploymentStatusResponseDto {
     return this.deploymentService.getDeploymentStatus(jobId);
   }
+
+  @Get('list')
+  @ApiOperation({ summary: '배포 작업 목록 조회' })
+  listDeployments(): { jobId: string; status: string }[] {
+    return this.deploymentService.listDeployments();
+}
 }

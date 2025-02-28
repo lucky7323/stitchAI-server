@@ -16,7 +16,7 @@ export class DeploymentService {
 
   /**
    * 새로운 Eliza 배포 작업을 시작합니다.
-   * @param telegramToken Telegram Bot Token
+   * @param dto 배포 요청 DTO
    * @returns 생성된 작업 ID
    */
   async createElizaDeployment(dto: CreateElizaRequestDto): Promise<string> {
@@ -238,5 +238,16 @@ export class DeploymentService {
     Object.values(this.statusCheckIntervals).forEach((interval) => {
       clearInterval(interval);
     });
+  }
+
+  /**
+   * 배포 작업 목록 조회
+   * @returns 배포 작업 목록
+   */
+  listDeployments(): { jobId: string; status: string }[] {
+    return Object.entries(this.deploymentStatus).map(([jobId, status]) => ({
+      jobId,
+      status: status.status,
+    }));
   }
 }
