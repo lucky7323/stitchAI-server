@@ -19,7 +19,7 @@ export class DeploymentController {
     type: DeploymentResponseDto,
   })
   async createEliza(@Body() dto: CreateElizaRequestDto): Promise<DeploymentResponseDto> {
-    const jobId = await this.deploymentService.createElizaDeployment(dto.telegram);
+    const jobId = await this.deploymentService.createElizaDeployment(dto);
     
     return {
       jobId,
