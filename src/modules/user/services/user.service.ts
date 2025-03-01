@@ -28,6 +28,7 @@ export class UserService {
                 status: true,
               },
             },
+            platform: true,
           },
         },
         memory: {
@@ -58,6 +59,7 @@ export class UserService {
           socialLink: agent.socialLink,
           memory: agent.memory.title,
           status: agent.deployment.status,
+          platform: agent.platform,
         })) || [];
       const memory = user.memory?.map(memory => memory) || [];
       return {

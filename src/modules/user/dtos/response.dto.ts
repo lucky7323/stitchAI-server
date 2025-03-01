@@ -30,6 +30,9 @@ export class AgentResponseDto {
 
   @ApiProperty({ description: 'The status of the agent' })
   status: DeploymentStatus;
+
+  @ApiProperty({ description: 'The platform of the agent' })
+  platform: MemoryPlatform;
 }
 
 export class MemoryResponseDto {

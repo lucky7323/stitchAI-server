@@ -5,7 +5,7 @@ import * as path from 'path';
 import { DeploymentStatusResponseDto } from '../dtos/response.dto';
 import { CreateElizaRequestDto } from '../dtos/request.dto';
 import { PrismaService } from '../../../providers/prisma/services/prisma.service';
-import { DeploymentStatus } from '@prisma/client';
+import { DeploymentStatus, MemoryPlatform } from '@prisma/client';
 
 const execAsync = promisify(exec);
 
@@ -44,6 +44,7 @@ export class DeploymentService {
         userWalletAddress: dto.walletAddress,
         memoryId: dto.memoryId,
         deploymentId: deployment.id,
+        platform: MemoryPlatform.ELIZA_OS,
       },
     });
 

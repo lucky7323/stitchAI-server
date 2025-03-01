@@ -59,6 +59,8 @@ model Agent {
 
   deployment   Deployment @relation(fields: [deploymentId], references: [id])
   deploymentId Int
+
+  platform MemoryPlatform
 }
 
 model Memory {

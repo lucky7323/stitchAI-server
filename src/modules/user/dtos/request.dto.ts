@@ -73,4 +73,8 @@ export class CreateAgentRequestDto {
   @Type(() => Number)
   @IsOptional()
   deploymentId?: number;
+
+  @ApiProperty({ description: 'The platform of the agent' })
+  @IsEnum(MemoryPlatform)
+  platform: MemoryPlatform;
 }

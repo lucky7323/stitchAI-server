@@ -13,6 +13,7 @@ export class UserAgentService {
     socialLink,
     memoryId,
     deploymentId,
+    platform,
   }: CreateAgentRequestDto): Promise<void> {
     await this.prisma.agent.create({
       data: {
@@ -22,6 +23,7 @@ export class UserAgentService {
         memoryId,
         userWalletAddress,
         deploymentId,
+        platform,
       },
     });
   }
