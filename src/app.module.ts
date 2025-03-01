@@ -9,6 +9,7 @@ import { EnvModule } from './modules/env/env.module';
 import { PingModule } from './modules/ping/ping.module';
 import { PrismaModule } from './providers/prisma/prisma.module';
 import { ExtractorModule } from './modules/extractor/extractor.module';
+import { CrewAiModule } from './modules/crewai/crewai.module';
 
 @Module({
   imports: [
@@ -26,6 +27,8 @@ import { ExtractorModule } from './modules/extractor/extractor.module';
     DeploymentModule,
 
     ExtractorModule,
+
+    CrewAiModule,
 
     EnvModule,
     PrismaModule,
