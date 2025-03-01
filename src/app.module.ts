@@ -8,6 +8,7 @@ import { DeploymentModule } from './modules/deployment/deployment.module';
 import { EnvModule } from './modules/env/env.module';
 import { PingModule } from './modules/ping/ping.module';
 import { PrismaModule } from './providers/prisma/prisma.module';
+import { ExtractorModule } from './modules/extractor/extractor.module';
 
 @Module({
   imports: [
@@ -23,6 +24,8 @@ import { PrismaModule } from './providers/prisma/prisma.module';
 
     // deploy agent
     DeploymentModule,
+
+    ExtractorModule,
 
     EnvModule,
     PrismaModule,
