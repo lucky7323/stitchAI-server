@@ -1,8 +1,11 @@
 import { Controller, Post, Body, HttpException, HttpStatus, Logger } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBody, ApiResponse } from '@nestjs/swagger';
 import { CrewAiService } from '../services/crewai.service';
+import { IsString, IsNotEmpty } from 'class-validator';
 
-class AddRagDataDto {
+export class AddRagDataDto {
+  @IsString()
+  @IsNotEmpty()
   data: string;
 }
 
@@ -29,8 +32,16 @@ export class CrewAiController {
   @ApiResponse({ status: 500, description: 'Failed to upload data to the VM' })
   async addRagData(@Body() ragDataDto: AddRagDataDto) {
     try {
+      this.logger.debug(`Received request body: ${JSON.stringify(ragDataDto)}`);
+      this.logger.debug(`Data type: ${typeof ragDataDto.data}`);
+      this.logger.debug(`Data value: ${ragDataDto.data}`);
+
       if (!ragDataDto.data || typeof ragDataDto.data !== 'string') {
-        throw new HttpException('Invalid data format. "data" field must be a non-empty string.', HttpStatus.BAD_REQUEST);
+        this.logger.debug('Validation failed: data is invalid');
+        throw new HttpException(
+          `Invalid data format. "data" field must be a non-empty string. Received: ${JSON.stringify(ragDataDto)}`, 
+          HttpStatus.BAD_REQUEST
+        );
       }
 
       const result = await this.crewAiService.uploadRagData(ragDataDto.data);
