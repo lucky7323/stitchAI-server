@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import { MemoryType } from '@prisma/client';
 import { PrismaService } from 'src/providers/prisma/services/prisma.service';
 import { MarketResponseDto } from '../dtos/response.dto';
 import { MarketRequestQueryDto } from '../dtos/request.dto';
