@@ -7,6 +7,10 @@ export class AddRagDataDto {
   @IsString()
   @IsNotEmpty()
   data: string;
+
+  @IsString()
+  @IsNotEmpty()
+  walletAddress: string;
 }
 
 @ApiTags('crewai')
@@ -44,7 +48,7 @@ export class CrewAiController {
         );
       }
 
-      const result = await this.crewAiService.uploadRagData(ragDataDto.data);
+      const result = await this.crewAiService.uploadRagData(ragDataDto.data, ragDataDto.walletAddress);
       
       return {
         success: true,

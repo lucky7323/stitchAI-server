@@ -33,4 +33,20 @@ export class CreateElizaRequestDto {
   @IsNotEmpty()
   @IsString()
   socialLink: string;
+
+  @ApiProperty({
+    description: 'Wallet address',
+    example: '0x1234567890ABCDEF1234567890ABCDEF12345678',
+  })
+  @IsNotEmpty()
+  @IsString()
+  walletAddress: string;
+
+  @ApiProperty({
+    description: 'Memory ID',
+    example: '1234567890ABCDEF1234567890ABCDEF12345678',
+  })
+  @IsNotEmpty()
+  @IsString()
+  memoryId: string;
 }

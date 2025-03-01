@@ -43,3 +43,34 @@ export class CreateMemoryRequestDto {
   @Type(() => Number)
   price: number;
 }
+
+export class CreateAgentRequestDto {
+  @ApiProperty({ description: 'The name of the agent' })
+  @IsString()
+  name: string;
+
+  @ApiProperty({ description: 'The description of the agent', required: false })
+  @IsString()
+  @IsOptional()
+  description?: string;
+
+  @ApiProperty({ description: 'The social link of the agent', required: false })
+  @IsString()
+  @IsOptional()
+  socialLink?: string;
+
+  @ApiProperty({ description: 'The memory ID associated with the agent', required: false })
+  @IsString()
+  @IsOptional()
+  memoryId?: string;
+
+  @ApiProperty({ description: 'The wallet address of the user who owns the agent' })
+  @IsString()
+  userWalletAddress: string;
+
+  @ApiProperty({ description: 'The deployment ID associated with the agent', required: false })
+  @IsNumber()
+  @Type(() => Number)
+  @IsOptional()
+  deploymentId?: number;
+}
