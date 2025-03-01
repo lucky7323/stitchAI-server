@@ -2,7 +2,6 @@ import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { exec } from 'child_process';
 import { promisify } from 'util';
 import { PrismaService } from '../../../providers/prisma/services/prisma.service';
-import { SilentSshService } from './silent-ssh.service';
 import { ConfigService } from '@nestjs/config';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -14,15 +13,14 @@ const execAsync = promisify(exec);
 export class ExtractorService {
   private readonly logger = new Logger(ExtractorService.name);
   private readonly zone: string;
-  private readonly sshKeyPath: string;
+  private readonly sshKeyFile: string;
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly silentSshService: SilentSshService,
     private readonly configService: ConfigService
   ) {
     this.zone = this.configService.get('ZONE') || 'us-central1-f';
-    this.sshKeyPath = path.join(os.homedir(), '.ssh', 'eliza_service_key');
+    this.sshKeyFile = this.configService.get('SSH_KEY_PATH') || '~/.ssh/google_compute_engine';
   }
 
   /**
@@ -31,8 +29,14 @@ export class ExtractorService {
    * @returns CSV 데이터 문자열
    */
   async extractMemoriesAsCSV(instanceName: string): Promise<{ csv: string, filename: string }> {
+    // 임시 디렉토리 생성
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'sqlite-extract-'));
+    const localDbPath = path.join(tmpDir, 'db.sqlite');
+    const outputCsvPath = path.join(tmpDir, 'memories.csv');
+    
     try {
       // 인스턴스가 존재하고 실행 중인지 확인
+      this.logger.log(`인스턴스 ${instanceName} 상태 확인 중...`);
       const { stdout: instanceStatus } = await execAsync(
         `gcloud compute instances describe ${instanceName} --zone=${this.zone} --format="json(status)"`
       );
@@ -41,43 +45,88 @@ export class ExtractorService {
       if (status?.status !== 'RUNNING') {
         throw new NotFoundException(`인스턴스 ${instanceName}이(가) 실행 중이 아니거나 존재하지 않습니다.`);
       }
-
-      // SSH 인증이 설정되어 있는지 확인
-      if (!this.silentSshService.isSshConfigured()) {
-        await this.silentSshService.setupSilentSshAuth();
-      }
-
-      // VM에서 직접 SQLite 명령 실행
-      const sqliteCommand = `
-        sqlite3 -header -csv /home/ubuntu/eliza/agent/data/db.sqlite "SELECT * FROM memories;"
-      `;
       
-      // 비밀번호 없는 SSH 키를 사용하여 명령 실행
-      const { stdout } = await execAsync(
-        `gcloud compute ssh ubuntu@${instanceName} --zone=${this.zone} --ssh-key-file=${this.sshKeyPath} --command="${sqliteCommand}" --quiet`
+      // 데이터베이스 파일 다운로드 (SCP 사용)
+      this.logger.log(`인스턴스 ${instanceName}에서 SQLite 데이터베이스 다운로드 중...`);
+      
+      try {
+        await execAsync(
+          `gcloud compute scp ubuntu@${instanceName}:/home/ubuntu/eliza/agent/data/db.sqlite ${localDbPath} --zone=${this.zone} --quiet`
+        );
+      } catch (scpError) {
+        throw new Error(`SQLite 데이터베이스 다운로드 실패: ${scpError.message}`);
+      }
+      
+      // 로컬에서 SQLite 명령 실행
+      this.logger.log('SQLite 데이터베이스에서 memories 테이블 추출 중...');
+      await execAsync(
+        `sqlite3 -header -csv ${localDbPath} "SELECT * FROM memories;" > ${outputCsvPath}`
       );
       
-      // CSV 데이터 반환
-      return { 
-        csv: stdout,
+      // CSV 파일 읽기
+      const csvData = fs.readFileSync(outputCsvPath, 'utf8');
+      
+      return {
+        csv: csvData,
         filename: `${instanceName}_memories_${new Date().toISOString().slice(0, 10)}.csv`
       };
     } catch (error) {
       this.logger.error(`${instanceName}에서 memories 추출 실패: ${error.message}`);
-      
-      // SSH 인증 오류가 발생한 경우 재설정 시도
-      if (error.message.includes('Permission denied') || 
-          error.message.includes('passphrase') || 
-          error.message.includes('authentication')) {
-        try {
-          this.logger.log('SSH 인증 오류 발생, 재설정 시도 중...');
-          await this.silentSshService.setupSilentSshAuth();
-          throw new Error('SSH 인증을 재설정했습니다. 다시 시도해주세요.');
-        } catch (retryError) {
-          throw new Error(`SSH 인증 재설정 실패: ${retryError.message}`);
-        }
+      throw error;
+    } finally {
+      // 임시 파일 정리
+      try {
+        this.logger.debug('임시 파일 정리 중...');
+        if (fs.existsSync(localDbPath)) fs.unlinkSync(localDbPath);
+        if (fs.existsSync(outputCsvPath)) fs.unlinkSync(outputCsvPath);
+        fs.rmdirSync(tmpDir);
+      } catch (cleanupError) {
+        this.logger.warn(`임시 파일 정리 실패: ${cleanupError.message}`);
       }
+    }
+  }
+  
+  /**
+   * 예비 추출 방법 - 데이터베이스 복사 없이 VM에서 직접 수행
+   */
+  async extractMemoriesDirectly(instanceName: string): Promise<{ csv: string, filename: string }> {
+    try {
+      // 임시 스크립트 파일 생성
+      const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'sqlite-script-'));
+      const scriptPath = path.join(tmpDir, 'extract-memories.sh');
+      const localOutputPath = path.join(tmpDir, 'memories.csv');
       
+      // 스크립트 내용 작성
+      fs.writeFileSync(scriptPath, `#!/bin/bash
+cd /home/ubuntu/eliza/agent/data
+sqlite3 -header -csv db.sqlite "SELECT * FROM memories;"
+`, { mode: 0o755 });
+      
+      // 스크립트 업로드
+      await execAsync(
+        `gcloud compute scp ${scriptPath} ubuntu@${instanceName}:/home/ubuntu/extract-memories.sh --zone=${this.zone} --quiet`
+      );
+      
+      // 스크립트 실행 및 결과 캡처
+      const { stdout } = await execAsync(
+        `gcloud compute ssh ubuntu@${instanceName} --zone=${this.zone} --command="bash /home/ubuntu/extract-memories.sh" --quiet`
+      );
+      
+      // 정리
+      await execAsync(
+        `gcloud compute ssh ubuntu@${instanceName} --zone=${this.zone} --command="rm /home/ubuntu/extract-memories.sh" --quiet`
+      );
+      
+      // 임시 파일 정리
+      fs.unlinkSync(scriptPath);
+      fs.rmdirSync(tmpDir);
+      
+      return {
+        csv: stdout,
+        filename: `${instanceName}_memories_${new Date().toISOString().slice(0, 10)}.csv`
+      };
+    } catch (error) {
+      this.logger.error(`직접 추출 실패: ${error.message}`);
       throw error;
     }
   }
@@ -125,35 +174,39 @@ export class ExtractorService {
   }
   
   /**
-   * 특정 VM 인스턴스의 SQLite 스키마 정보 가져오기
-   * @param instanceName VM 인스턴스 이름
-   * @returns SQLite 데이터베이스의 테이블과 스키마 정보
+   * SQLite 테이블 목록 가져오기
    */
-  async getSqliteSchema(instanceName: string): Promise<any> {
+  async getTableList(instanceName: string): Promise<string[]> {
     try {
-      // 인스턴스가 존재하고 실행 중인지 확인
-      const { stdout: instanceStatus } = await execAsync(
-        `gcloud compute instances describe ${instanceName} --zone=${this.zone} --format="json(status)"`
+      const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'sqlite-tables-'));
+      const scriptPath = path.join(tmpDir, 'list-tables.sh');
+      
+      // 스크립트 내용 작성
+      fs.writeFileSync(scriptPath, `#!/bin/bash
+cd /home/ubuntu/eliza/agent/data
+sqlite3 db.sqlite ".tables"
+`, { mode: 0o755 });
+      
+      // 스크립트 업로드 및 실행
+      await execAsync(
+        `gcloud compute scp ${scriptPath} ubuntu@${instanceName}:/home/ubuntu/list-tables.sh --zone=${this.zone} --quiet`
       );
       
-      const status = JSON.parse(instanceStatus);
-      if (status?.status !== 'RUNNING') {
-        throw new NotFoundException(`인스턴스 ${instanceName}이(가) 실행 중이 아니거나 존재하지 않습니다.`);
-      }
-
-      // SQLite 스키마 정보를 가져오는 명령
-      const schemaCommand = `
-        sqlite3 /home/ubuntu/eliza/agent/data/db.sqlite ".schema memories"
-      `;
-      
-      // 비밀번호 없는 SSH 키를 사용하여 명령 실행
       const { stdout } = await execAsync(
-        `gcloud compute ssh ubuntu@${instanceName} --zone=${this.zone} --ssh-key-file=${this.sshKeyPath} --command="${schemaCommand}" --quiet`
+        `gcloud compute ssh ubuntu@${instanceName} --zone=${this.zone} --command="bash /home/ubuntu/list-tables.sh" --quiet`
       );
       
-      return { schema: stdout };
+      // 정리
+      await execAsync(
+        `gcloud compute ssh ubuntu@${instanceName} --zone=${this.zone} --command="rm /home/ubuntu/list-tables.sh" --quiet`
+      );
+      fs.unlinkSync(scriptPath);
+      fs.rmdirSync(tmpDir);
+      
+      // 공백으로 구분된 테이블 이름을 배열로 변환
+      return stdout.trim().split(/\s+/);
     } catch (error) {
-      this.logger.error(`${instanceName}에서 스키마 정보 가져오기 실패: ${error.message}`);
+      this.logger.error(`테이블 목록 가져오기 실패: ${error.message}`);
       throw error;
     }
   }

@@ -3,19 +3,19 @@ import { Response } from 'express';
 import { ApiTags, ApiOperation, ApiParam, ApiQuery, ApiResponse } from '@nestjs/swagger';
 import { ExtractorService } from '../services/extractor.service';
 
-@ApiTags('sqlite-extract')
-@Controller('api/sqlite-extract')
+@ApiTags('sqlite-extractor')
+@Controller('api/sqlite-extractor')
 export class ExtractorController {
-  constructor(private readonly sqliteExtractService: ExtractorService) {}
+  constructor(private readonly sqliteExtractorService: ExtractorService) {}
 
   @Get('instances')
-  @ApiOperation({ summary: 'Get all available VM instances' })
-  @ApiResponse({ status: 200, description: 'Returns a list of available VM instances' })
+  @ApiOperation({ summary: '사용 가능한 VM 인스턴스 목록 조회' })
+  @ApiResponse({ status: 200, description: '사용 가능한 VM 인스턴스 목록 반환' })
   async getInstances() {
-    const deployments = await this.sqliteExtractService.getDeploymentsWithInstances();
-    const availableInstances = await this.sqliteExtractService.listAvailableInstances();
+    const deployments = await this.sqliteExtractorService.getDeploymentsWithInstances();
+    const availableInstances = await this.sqliteExtractorService.listAvailableInstances();
     
-    // Combine the data to show which deployments have running instances
+    // 데이터 결합 - 어떤 배포가 실행 중인 인스턴스를 가지고 있는지 표시
     return {
       deployments: deployments.map(dep => ({
         ...dep,
@@ -26,31 +26,31 @@ export class ExtractorController {
   }
 
   @Get('memories/:instanceName')
-  @ApiOperation({ summary: 'Extract memories from SQLite database as CSV' })
-  @ApiParam({ name: 'instanceName', description: 'The name of the VM instance' })
+  @ApiOperation({ summary: 'SQLite 데이터베이스에서 memories 테이블 데이터를 CSV로 추출' })
+  @ApiParam({ name: 'instanceName', description: 'VM 인스턴스 이름' })
   @ApiQuery({ 
     name: 'download', 
     required: false, 
     type: Boolean, 
-    description: 'Set to true to download as file, false to return content directly'
+    description: '파일로 다운로드할지 여부(true: 파일 다운로드, false: 콘텐츠 직접 반환)' 
   })
-  @ApiResponse({ status: 200, description: 'Returns the memories data as CSV' })
-  @ApiResponse({ status: 404, description: 'Instance not found or not running' })
-  @ApiResponse({ status: 500, description: 'Failed to extract data' })
+  @ApiResponse({ status: 200, description: 'memories 데이터를 CSV로 반환' })
+  @ApiResponse({ status: 404, description: '인스턴스를 찾을 수 없거나 실행 중이 아님' })
+  @ApiResponse({ status: 500, description: '데이터 추출 실패' })
   async getMemoriesAsCSV(
     @Param('instanceName') instanceName: string,
     @Query('download') download: string,
     @Res() res: Response
   ) {
     try {
-      const { csv, filename } = await this.sqliteExtractService.extractMemoriesAsCSV(instanceName);
+      const { csv, filename } = await this.sqliteExtractorService.extractMemoriesAsCSV(instanceName);
       
       if (download === 'true') {
-        // Set headers for file download
+        // 파일 다운로드용 헤더 설정
         res.setHeader('Content-Type', 'text/csv');
         res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
       } else {
-        // Just return as plain text
+        // 일반 텍스트로 반환
         res.setHeader('Content-Type', 'text/plain');
       }
       
@@ -61,7 +61,28 @@ export class ExtractorController {
       }
       
       throw new InternalServerErrorException(
-        `Failed to extract memories from ${instanceName}: ${error.message}`
+        `${instanceName}에서 memories 추출 실패: ${error.message}`
+      );
+    }
+  }
+  
+  @Get('tables/:instanceName')
+  @ApiOperation({ summary: 'SQLite 데이터베이스의 테이블 목록 조회' })
+  @ApiParam({ name: 'instanceName', description: 'VM 인스턴스 이름' })
+  @ApiResponse({ status: 200, description: '테이블 목록 반환' })
+  @ApiResponse({ status: 404, description: '인스턴스를 찾을 수 없거나 실행 중이 아님' })
+  @ApiResponse({ status: 500, description: '테이블 목록 조회 실패' })
+  async getTableList(@Param('instanceName') instanceName: string) {
+    try {
+      const tables = await this.sqliteExtractorService.getTableList(instanceName);
+      return { tables };
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      
+      throw new InternalServerErrorException(
+        `${instanceName}에서 테이블 목록 조회 실패: ${error.message}`
       );
     }
   }
