@@ -6,6 +6,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 import { PrismaService } from 'src/providers/prisma/services/prisma.service';
+import { MemoryPlatform } from '@prisma/client';
 
 const execAsync = promisify(exec);
 
@@ -102,6 +103,7 @@ export class CrewAiService {
               socialLink: socialLink,
               memoryId: memoryId,
               deploymentId: deployment.id,
+              platform: MemoryPlatform.CREW_AI,
             },
           });
         }
