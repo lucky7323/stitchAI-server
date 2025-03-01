@@ -10,6 +10,8 @@ import { PingModule } from './modules/ping/ping.module';
 import { PrismaModule } from './providers/prisma/prisma.module';
 import { ExtractorModule } from './modules/extractor/extractor.module';
 import { CrewAiModule } from './modules/crewai/crewai.module';
+import { MarketModule } from './modules/market/market.module';
+import { UserModule } from './modules/user/user.module';
 
 @Module({
   imports: [
@@ -29,6 +31,8 @@ import { CrewAiModule } from './modules/crewai/crewai.module';
     ExtractorModule,
 
     CrewAiModule,
+    MarketModule,
+    UserModule,
 
     EnvModule,
     PrismaModule,

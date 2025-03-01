@@ -16,17 +16,75 @@ enum DeploymentStatus {
   FAILED
 }
 
+enum MemoryType {
+  AGENT
+  EXTERNAL
+}
+
+enum MemoryPlatform {
+  ELIZA_OS
+  VIRTUALS
+  CREW_AI
+}
+
 // Deployment model
 model Deployment {
-  id            Int             @id @default(autoincrement())
-  jobId         String          @unique
+  id            Int              @id @default(autoincrement())
+  jobId         String           @unique
   status        DeploymentStatus
   message       String
   instanceName  String?
   output        String?
   error         String?
-  startTime     DateTime        @default(now())
+  startTime     DateTime         @default(now())
   completedTime DateTime?
-  
+
+  agent Agent[]
+
   @@index([startTime])
+}
+
+model Agent {
+  id String @id @default(uuid())
+
+  name        String
+  description String?
+  socialLink  String?
+
+  memory   Memory @relation(fields: [memoryId], references: [id])
+  memoryId String
+
+  user              User   @relation(fields: [userWalletAddress], references: [walletAddress])
+  userWalletAddress String
+
+  deployment   Deployment @relation(fields: [deploymentId], references: [id])
+  deploymentId Int
+}
+
+model Memory {
+  id String @id @default(uuid())
+
+  type     MemoryType     @default(AGENT)
+  platform MemoryPlatform
+
+  title       String
+  description String?
+  dataUrl     String // cloud storage url
+
+  owner   User   @relation(fields: [ownerId], references: [walletAddress])
+  ownerId String
+
+  updatedAt DateTime @updatedAt
+
+  price    Float @default(0.0)
+  metadata Json?
+
+  agent Agent[]
+}
+
+model User {
+  walletAddress String @id
+
+  agent  Agent[]
+  memory Memory[]
 }
