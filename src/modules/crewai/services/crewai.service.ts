@@ -27,9 +27,10 @@ export class CrewAiService {
    * @param agentName Agent name
    * @param description Agent description
    * @param socialLink Agent social link
+   * @param memoryId Agent memory id
    * @returns Object containing the upload result information
    */
-  async uploadRagData(data: string, walletAddress: string, agentName: string, description: string, socialLink: string): Promise<any> {
+  async uploadRagData(data: string, walletAddress: string, agentName: string, description: string, socialLink: string, memoryId: string): Promise<any> {
     try {
       // First, check if the instance exists and is running
       const { stdout: instanceStatus } = await execAsync(
@@ -84,7 +85,10 @@ export class CrewAiService {
         const existingAgent = await this.prisma.agent.findFirst({
           where: {
             name: agentName,
-            userWalletAddress: walletAddress
+            description: description,
+            userWalletAddress: walletAddress,
+            deploymentId: deployment.id,
+            memoryId: memoryId
           }
         });
   
@@ -96,7 +100,7 @@ export class CrewAiService {
               description: description,
               userWalletAddress: walletAddress,
               socialLink: socialLink,
-              memoryId: '0x0',
+              memoryId: memoryId,
               deploymentId: deployment.id,
             },
           });

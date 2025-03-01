@@ -10,6 +10,10 @@ export class AddRagDataDto {
 
   @IsString()
   @IsNotEmpty()
+  memoryId: string;
+
+  @IsString()
+  @IsNotEmpty()
   walletAddress: string;
 
   @IsString()
@@ -60,7 +64,7 @@ export class CrewAiController {
         );
       }
 
-      const result = await this.crewAiService.uploadRagData(ragDataDto.data, ragDataDto.walletAddress, ragDataDto.agentName, ragDataDto.description, ragDataDto.socialLink);
+      const result = await this.crewAiService.uploadRagData(ragDataDto.data, ragDataDto.walletAddress, ragDataDto.agentName, ragDataDto.description, ragDataDto.socialLink, ragDataDto.memoryId);
       
       return {
         success: true,
