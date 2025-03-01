@@ -11,6 +11,7 @@ import { PrismaModule } from './providers/prisma/prisma.module';
 import { ExtractorModule } from './modules/extractor/extractor.module';
 import { CrewAiModule } from './modules/crewai/crewai.module';
 import { MarketModule } from './modules/market/market.module';
+import { UserModule } from './modules/user/user.module';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { MarketModule } from './modules/market/market.module';
 
     CrewAiModule,
     MarketModule,
+    UserModule,
 
     EnvModule,
     PrismaModule,
