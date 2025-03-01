@@ -58,6 +58,13 @@ export class CrewAiService {
         
         this.logger.log(`RAG data successfully uploaded to ${this.instanceName}: ${verifyOutput.trim()}`);
         
+        // Restart the crewai-run service
+        const { stdout: restartOutput } = await execAsync(
+          `gcloud compute ssh ubuntu@${this.instanceName} --zone=${this.zone} --command="sudo service crewai-run restart" --quiet`
+        );
+        
+        this.logger.log(`crewai-run service restarted: ${restartOutput.trim()}`);
+
         return {
           instanceName: this.instanceName,
           filePath: '/home/ubuntu/mycrew/rag.txt',
