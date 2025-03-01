@@ -26,12 +26,24 @@ export class DeploymentService {
     const jobId = Date.now().toString() + Math.floor(Math.random() * 1000).toString();
 
     // DB에 작업 상태 생성
-    await this.prisma.deployment.create({
+    const deployment = await this.prisma.deployment.create({
       data: {
         jobId,
         status: 'PENDING',
         message: '배포 작업이 시작되었습니다.',
         startTime: new Date(),
+      },
+    });
+
+    // Agent 생성
+    await this.prisma.agent.create({
+      data: {
+        name: dto.agentName,
+        description: dto.description,
+        socialLink: dto.socialLink,
+        userWalletAddress: dto.walletAddress,
+        memoryId: dto.memoryId,
+        deploymentId: deployment.id,
       },
     });
 

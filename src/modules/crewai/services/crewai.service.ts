@@ -5,6 +5,7 @@ import { ConfigService } from '@nestjs/config';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
+import { PrismaService } from 'src/providers/prisma/services/prisma.service';
 
 const execAsync = promisify(exec);
 
@@ -14,7 +15,7 @@ export class CrewAiService {
   private readonly instanceName: string;
   private readonly zone: string;
 
-  constructor(private readonly configService: ConfigService) {
+  constructor(private readonly configService: ConfigService, private readonly prisma: PrismaService) {
     this.instanceName = this.configService.get('CREWAI_INSTANCE_NAME') || 'crewai-agent-server';
     this.zone = this.configService.get('ZONE') || 'us-central1-f';
   }
@@ -24,7 +25,7 @@ export class CrewAiService {
    * @param data Text data to be saved as rag.txt
    * @returns Object containing the upload result information
    */
-  async uploadRagData(data: string): Promise<any> {
+  async uploadRagData(data: string, walletAddress: string): Promise<any> {
     try {
       // First, check if the instance exists and is running
       const { stdout: instanceStatus } = await execAsync(
@@ -65,6 +66,36 @@ export class CrewAiService {
         
         this.logger.log(`crewai-run service restarted: ${restartOutput.trim()}`);
 
+        const deployment = await this.prisma.deployment.create({
+          data: {
+            jobId: Date.now().toString() + Math.floor(Math.random() * 1000).toString(),
+            status: 'COMPLETED',
+            message: 'CrewAI agent deployed successfully',
+            instanceName: this.instanceName,
+            startTime: new Date(),
+            completedTime: new Date(),
+          },
+        });
+
+        const existingAgent = await this.prisma.agent.findFirst({
+          where: {
+            name: 'CrewAI Agent',
+            userWalletAddress: walletAddress
+          }
+        });
+  
+        // Only create agent if it doesn't exist
+        if (!existingAgent) {
+          await this.prisma.agent.create({
+            data: {
+              name: 'CrewAI Agent',
+              description: 'AI agent powered by CrewAI',
+              userWalletAddress: walletAddress,
+              memoryId: '0x0',
+              deploymentId: deployment.id,
+            },
+          });
+        }
         return {
           instanceName: this.instanceName,
           filePath: '/home/ubuntu/mycrew/rag.txt',
