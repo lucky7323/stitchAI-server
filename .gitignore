@@ -435,3 +435,5 @@ logs/
 credentials/
 
 ecosystem.config.js
+
+cloud-storage.json
