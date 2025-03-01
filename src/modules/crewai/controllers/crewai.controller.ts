@@ -1,7 +1,7 @@
 import { Controller, Post, Body, HttpException, HttpStatus, Logger } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBody, ApiResponse } from '@nestjs/swagger';
 import { CrewAiService } from '../services/crewai.service';
-import { IsString, IsNotEmpty } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional } from 'class-validator';
 
 export class AddRagDataDto {
   @IsString()
@@ -11,6 +11,18 @@ export class AddRagDataDto {
   @IsString()
   @IsNotEmpty()
   walletAddress: string;
+
+  @IsString()
+  @IsNotEmpty()
+  agentName: string;
+
+  @IsString()
+  @IsOptional()
+  description?: string;
+
+  @IsString()
+  @IsOptional()
+  socialLink?: string;
 }
 
 @ApiTags('crewai')
@@ -48,7 +60,7 @@ export class CrewAiController {
         );
       }
 
-      const result = await this.crewAiService.uploadRagData(ragDataDto.data, ragDataDto.walletAddress);
+      const result = await this.crewAiService.uploadRagData(ragDataDto.data, ragDataDto.walletAddress, ragDataDto.agentName, ragDataDto.description, ragDataDto.socialLink);
       
       return {
         success: true,

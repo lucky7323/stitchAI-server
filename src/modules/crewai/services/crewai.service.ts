@@ -23,9 +23,13 @@ export class CrewAiService {
   /**
    * Upload RAG data to the CrewAI VM instance
    * @param data Text data to be saved as rag.txt
+   * @param walletAddress User's wallet address
+   * @param agentName Agent name
+   * @param description Agent description
+   * @param socialLink Agent social link
    * @returns Object containing the upload result information
    */
-  async uploadRagData(data: string, walletAddress: string): Promise<any> {
+  async uploadRagData(data: string, walletAddress: string, agentName: string, description: string, socialLink: string): Promise<any> {
     try {
       // First, check if the instance exists and is running
       const { stdout: instanceStatus } = await execAsync(
@@ -79,7 +83,7 @@ export class CrewAiService {
 
         const existingAgent = await this.prisma.agent.findFirst({
           where: {
-            name: 'CrewAI Agent',
+            name: agentName,
             userWalletAddress: walletAddress
           }
         });
@@ -88,9 +92,10 @@ export class CrewAiService {
         if (!existingAgent) {
           await this.prisma.agent.create({
             data: {
-              name: 'CrewAI Agent',
-              description: 'AI agent powered by CrewAI',
+              name: agentName,
+              description: description,
               userWalletAddress: walletAddress,
+              socialLink: socialLink,
               memoryId: '0x0',
               deploymentId: deployment.id,
             },
