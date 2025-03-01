@@ -45,25 +45,24 @@ model Deployment {
 }
 
 model Agent {
-  id Int @id @default(autoincrement())
+  id String @id @default(uuid())
 
   name        String
   description String?
   socialLink  String?
 
-  memory Memory @relation(fields: [memoryId], references: [id])
+  memory   Memory @relation(fields: [memoryId], references: [id])
+  memoryId String
 
   user              User   @relation(fields: [userWalletAddress], references: [walletAddress])
   userWalletAddress String
 
   deployment   Deployment @relation(fields: [deploymentId], references: [id])
   deploymentId Int
-
-  memoryId Int
 }
 
 model Memory {
-  id Int @id @default(autoincrement())
+  id String @id @default(uuid())
 
   type     MemoryType     @default(AGENT)
   platform MemoryPlatform

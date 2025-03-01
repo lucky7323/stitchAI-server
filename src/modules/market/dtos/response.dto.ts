@@ -5,7 +5,7 @@ import { MemoryPlatform } from '@prisma/client';
 
 export class MarketResponseDto {
   @ApiProperty({ description: 'The id of the memory' })
-  id: number;
+  id: string;
 
   @ApiProperty({ description: 'The title of the memory' })
   title: string;

@@ -14,7 +14,7 @@ export class UserResponseDto {
 
 export class AgentResponseDto {
   @ApiProperty({ description: 'The id of the agent' })
-  id: number;
+  id: string;
 
   @ApiProperty({ description: 'The name of the agent' })
   name: string;
@@ -34,7 +34,7 @@ export class AgentResponseDto {
 
 export class MemoryResponseDto {
   @ApiProperty({ description: 'The id of the memory' })
-  id: number;
+  id: string;
 
   @ApiProperty({ description: 'The title of the memory' })
   title: string;
